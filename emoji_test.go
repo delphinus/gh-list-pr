@@ -89,30 +89,26 @@ func TestReplaceEmoji(t *testing.T) {
 }
 
 func TestEmojiCacheDir(t *testing.T) {
-	t.Run("with_xdg", func(t *testing.T) {
-		t.Setenv("XDG_CACHE_HOME", "/tmp/test-cache")
-		got := emojiCacheDir()
-		want := filepath.Join("/tmp/test-cache", "gh", "gh-list-pr")
-		if got != want {
-			t.Errorf("emojiCacheDir() = %q, want %q", got, want)
-		}
-	})
-
-	t.Run("without_xdg", func(t *testing.T) {
-		t.Setenv("XDG_CACHE_HOME", "")
-		got := emojiCacheDir()
+	got := emojiCacheDir()
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
 		home, _ := os.UserHomeDir()
-		want := filepath.Join(home, ".cache", "gh", "gh-list-pr")
-		if got != want {
-			t.Errorf("emojiCacheDir() = %q, want %q", got, want)
-		}
-	})
+		cacheDir = filepath.Join(home, ".cache")
+	}
+	want := filepath.Join(cacheDir, "gh", "gh-list-pr")
+	if got != want {
+		t.Errorf("emojiCacheDir() = %q, want %q", got, want)
+	}
 }
 
 func TestEmojiCachePath(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", "/tmp/test-cache")
 	got := emojiCachePath()
-	want := filepath.Join("/tmp/test-cache", "gh", "gh-list-pr", "emoji.json")
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		home, _ := os.UserHomeDir()
+		cacheDir = filepath.Join(home, ".cache")
+	}
+	want := filepath.Join(cacheDir, "gh", "gh-list-pr", "emoji.json")
 	if got != want {
 		t.Errorf("emojiCachePath() = %q, want %q", got, want)
 	}

@@ -17,11 +17,8 @@ func termWidth() int {
 		}
 	}
 
-	if f, err := os.Open("/dev/tty"); err == nil {
-		defer f.Close()
-		if w, _, err := term.GetSize(int(f.Fd())); err == nil && w > 0 {
-			return w
-		}
+	if w := termWidthFromTTY(); w > 0 {
+		return w
 	}
 
 	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {

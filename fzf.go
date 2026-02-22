@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 var selectionRe = regexp.MustCompile(`^#(\d+).*\s+(\S+)\s+\+\d+/-\d+`)
@@ -49,20 +48,23 @@ func handleSelection(selected string, opt options) error {
 	ref := m[2]
 
 	if num == 0 {
-		return execCommand("sh", "-c",
-			fmt.Sprintf("git checkout %s && git pull origin %s && git submodule update --init --recursive", ref, ref))
+		for _, args := range [][]string{
+			{"git", "checkout", ref},
+			{"git", "pull", "origin", ref},
+			{"git", "submodule", "update", "--init", "--recursive"},
+		} {
+			cmd := exec.Command(args[0], args[1:]...)
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("%s: %w", args[0], err)
+			}
+		}
+		return nil
 	}
 	if opt.web {
 		return execCommand("gh", "pr", "view", "-w", m[1])
 	}
 	return execCommand("gh", "co", "--recurse-submodules", m[1])
-}
-
-func execCommand(name string, args ...string) error {
-	bin, err := exec.LookPath(name)
-	if err != nil {
-		return fmt.Errorf("%s not found: %w", name, err)
-	}
-	argv := append([]string{name}, args...)
-	return syscall.Exec(bin, argv, os.Environ())
 }
