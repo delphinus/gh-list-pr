@@ -50,6 +50,20 @@ func TestSelectionRegex(t *testing.T) {
 			wantNum:    "7",
 			wantBranch: "branch-name",
 		},
+		{
+			name:       "padded_deletions",
+			input:      "#34473  lewis6991  feat(lua): add vim.async  vimasync  +2545/-   0",
+			wantMatch:  true,
+			wantNum:    "34473",
+			wantBranch: "vimasync",
+		},
+		{
+			name:       "padded_additions",
+			input:      "#100  user  Title  branch  +   5/-300",
+			wantMatch:  true,
+			wantNum:    "100",
+			wantBranch: "branch",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

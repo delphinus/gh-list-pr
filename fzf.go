@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var selectionRe = regexp.MustCompile(`^#(\d+).*\s+(\S+)\s+\+\d+/-\d+`)
+var selectionRe = regexp.MustCompile(`^#(\d+).*\s+(\S+)\s+\+\s*\d+/-\s*\d+`)
 
 func runFzf(lines string, opt options) error {
 	args := []string{"--ansi"}
