@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime/debug"
 
 	"github.com/spf13/pflag"
 )
@@ -13,15 +14,60 @@ type options struct {
 	searchOptions string
 	web           bool
 	fzfOptions    string
+	version       bool
 }
 
 func main() {
 	var opt options
 	pflag.BoolVarP(&opt.print, "print", "p", false, "Print list without launching fzf selector")
-	pflag.StringVarP(&opt.searchOptions, "search-options", "s", "", "Filter PRs (passed to gh pr list)")
+	pflag.StringVarP(&opt.searchOptions, "search-options", "s", "", "Filter PRs (passed to gh pr list; defaults to 30 items, open only)")
 	pflag.BoolVarP(&opt.web, "web", "w", false, "Open selected PR in web browser")
 	pflag.StringVarP(&opt.fzfOptions, "fzf-options", "f", "", "Additional fzf options")
+	pflag.BoolVarP(&opt.version, "version", "v", false, "Print version")
+
+	pflag.Usage = func() {
+		fmt.Fprintln(os.Stderr, `List pull requests and interactively select one to checkout using fzf.
+
+Shows a color-coded PR list with author, title, branch, additions/deletions,
+changed files, and date. Default branches (main/master/develop/staging) are
+included when no search filter is applied.
+
+USAGE
+  gh list-pr [flags]
+
+EXAMPLES
+  # Launch fzf and choose a PR to checkout
+  gh list-pr
+
+  # Print all active PRs without fzf
+  gh list-pr -p
+
+  # Open selected PR in web browser
+  gh list-pr -w
+
+  # Filter PRs by author
+  gh list-pr -s '--author=@me'
+
+  # Show more PRs (default: 30)
+  gh list-pr -s '--limit 100'
+
+  # Include closed/merged PRs (default: open only)
+  gh list-pr -s '--state all'
+
+FLAGS`)
+		pflag.PrintDefaults()
+	}
+
 	pflag.Parse()
+
+	if opt.version {
+		version := "(devel)"
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+			version = info.Main.Version
+		}
+		fmt.Println("gh-list-pr " + version)
+		return
+	}
 
 	if _, err := exec.LookPath("git"); err != nil {
 		fmt.Fprintln(os.Stderr, "git not found")
