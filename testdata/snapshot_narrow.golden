@@ -1,0 +1,4 @@
+[32m#1     [0m[35malice    [0m[36mfeature/add-new   [0m[32m+  42[0m/[31m- 10[0m
+[90m#23    [0m[35mbob      [0m[36mrefactor/cleanup  [0m[32m+ 150[0m/[31m-200[0m
+[32m#456   [0m[35mcharlie  [0m[36mfix/i18n-support  [0m[32m+   5[0m/[31m-  3[0m
+[32m#7890  [0m[35mdave     [0m[36mrelease/v2.0      [0m[32m+1234[0m/[31m-567[0m
