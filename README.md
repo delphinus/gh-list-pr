@@ -23,6 +23,12 @@ gh list-pr -w
 # Filter PRs
 gh list-pr -s '--author=@me'
 
+# Show more PRs (default: 30)
+gh list-pr -s '--limit 100'
+
+# Include closed/merged PRs (default: open only)
+gh list-pr -s '--state all'
+
 # Custom fzf options
 gh list-pr -f '--height=50%'
 ```
@@ -32,7 +38,7 @@ gh list-pr -f '--height=50%'
 | Flag | Description |
 |------|-------------|
 | `-p`, `--print` | Print list without launching fzf |
-| `-s`, `--search-options` | Filter PRs (passed to `gh pr list`) |
+| `-s`, `--search-options` | Filter PRs (passed to `gh pr list`). Note: `gh pr list` defaults to **30 items** and **open state only**. Use `--limit` and `--state` to override. |
 | `-w`, `--web` | Open selected PR in web browser |
 | `-f`, `--fzf-options` | Additional fzf options |
 
