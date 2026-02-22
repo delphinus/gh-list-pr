@@ -16,11 +16,12 @@ import (
 var emojiPattern = regexp.MustCompile(`:(\w+):`)
 
 func emojiCacheDir() string {
-	if xdg := os.Getenv("XDG_CACHE_HOME"); xdg != "" {
-		return filepath.Join(xdg, "gh", "gh-list-pr")
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		home, _ := os.UserHomeDir()
+		cacheDir = filepath.Join(home, ".cache")
 	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".cache", "gh", "gh-list-pr")
+	return filepath.Join(cacheDir, "gh", "gh-list-pr")
 }
 
 func emojiCachePath() string {
