@@ -2,6 +2,8 @@
 
 A GitHub CLI extension to list pull requests and interactively select one to checkout using fzf.
 
+![demo](demo.gif)
+
 ## Installation
 
 ```bash
