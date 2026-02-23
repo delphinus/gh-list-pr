@@ -50,6 +50,21 @@ gh list-pr -f '--height=50%'
 - Default branch display (main/master/develop/staging)
 - East Asian wide character support
 
+## Why not `gh pr checkout`?
+
+`gh pr checkout` (without arguments) also offers interactive PR selection, but `gh list-pr` provides a richer experience:
+
+| | `gh pr checkout` | `gh list-pr` |
+|---|---|---|
+| Selector | Built-in simple picker | fzf (incremental search) |
+| Max items | 10 (fixed) | Configurable (`-s '--limit 1000'`) |
+| Displayed info | Number, title, branch | Author, title, branch, +/-lines, changed files, date |
+| Color coding | Minimal | Full (additions in green, deletions in red, etc.) |
+| Filtering | None | Via `gh pr list` options (`--author`, `--state`, `--search`, etc.) |
+| Default branches | Not shown | Shown (main/master/develop/staging) |
+| Output modes | Interactive only | Interactive, print (`-p`), web (`-w`) |
+| fzf customization | N/A | `--border`, `--height`, `--padding`, etc. via `-f` |
+
 ## Requirements
 
 - `git`
