@@ -84,8 +84,12 @@ FLAGS`)
 		}
 	}
 
+	sp := newSpinner("Fetching pull requests...")
+	sp.start()
+
 	prs, err := fetchPRs(opt.searchOptions)
 	if err != nil {
+		sp.stop()
 		fmt.Fprintf(os.Stderr, "Failed to fetch PRs: %v\n", err)
 		os.Exit(1)
 	}
@@ -101,9 +105,12 @@ FLAGS`)
 
 	emoji, err := loadEmoji()
 	if err != nil {
+		sp.stop()
 		fmt.Fprintf(os.Stderr, "Failed to load emojis: %v\n", err)
 		os.Exit(1)
 	}
+
+	sp.stop()
 
 	for i := range prs {
 		prs[i].Title = replaceEmoji(prs[i].Title, emoji)
