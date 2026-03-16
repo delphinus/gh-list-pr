@@ -10,6 +10,7 @@ import (
 )
 
 type options struct {
+	back          bool
 	print         bool
 	searchOptions string
 	web           bool
@@ -19,6 +20,7 @@ type options struct {
 
 func main() {
 	var opt options
+	pflag.BoolVarP(&opt.back, "back", "b", false, "Switch to the previous branch (like git switch -)")
 	pflag.BoolVarP(&opt.print, "print", "p", false, "Print list without launching fzf selector")
 	pflag.StringVarP(&opt.searchOptions, "search-options", "s", "", "Filter PRs (passed to gh pr list; defaults to 30 items, open only)")
 	pflag.BoolVarP(&opt.web, "web", "w", false, "Open selected PR in web browser")
@@ -44,6 +46,9 @@ EXAMPLES
 
   # Open selected PR in web browser
   gh list-pr -w
+
+  # Switch back to the previous branch
+  gh list-pr -b
 
   # Filter PRs by author
   gh list-pr -s '--author=@me'
@@ -73,6 +78,15 @@ FLAGS`)
 		fmt.Fprintln(os.Stderr, "git not found")
 		os.Exit(2)
 	}
+
+	if opt.back {
+		if err := switchBack(); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if _, err := exec.LookPath("gh"); err != nil {
 		fmt.Fprintln(os.Stderr, "gh not found")
 		os.Exit(2)

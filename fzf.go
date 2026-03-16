@@ -11,6 +11,22 @@ import (
 
 var selectionRe = regexp.MustCompile(`^#(\d+).*\s+(\S+)\s+\+\s*\d+/-\s*\d+`)
 
+func switchBack() error {
+	for _, args := range [][]string{
+		{"git", "checkout", "@{-1}"},
+		{"git", "submodule", "update", "--init", "--recursive"},
+	} {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("%s: %w", strings.Join(args, " "), err)
+		}
+	}
+	return nil
+}
+
 func runFzf(lines string, opt options) error {
 	args := []string{"--ansi"}
 
