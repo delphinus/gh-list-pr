@@ -23,17 +23,47 @@ worktree /wt/bare
 bare
 `
 	got := parseWorktrees(out)
-	want := map[string]string{
-		"main":      "/repo",
-		"feature/x": "/wt/feature",
+	want := []worktree{
+		{path: "/repo", branch: "main"},
+		{path: "/wt/feature", branch: "feature/x"},
+		{path: "/wt/detached"},
+		{path: "/wt/bare", bare: true},
 	}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
-	for k, v := range want {
-		if got[k] != v {
-			t.Errorf("%s: got %q, want %q", k, got[k], v)
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("%d: got %+v, want %+v", i, got[i], want[i])
 		}
+	}
+}
+
+func TestWorktrees(t *testing.T) {
+	list := []worktree{
+		{path: "/repo", branch: "main"},
+		{path: "/wt/feature", branch: "feature/x"},
+	}
+
+	inMain := &worktrees{list: list, current: "/repo"}
+	if got := inMain.linkedMain(); got != "" {
+		t.Errorf("in main worktree: linkedMain() = %q, want empty", got)
+	}
+
+	inLinked := &worktrees{list: list, current: "/wt/feature"}
+	if got := inLinked.linkedMain(); got != "/repo" {
+		t.Errorf("in linked worktree: linkedMain() = %q, want /repo", got)
+	}
+	if got := inLinked.pathOf("feature/x"); got != "/wt/feature" {
+		t.Errorf("pathOf(feature/x) = %q", got)
+	}
+	if got := inLinked.pathOf("other"); got != "" {
+		t.Errorf("pathOf(other) = %q, want empty", got)
+	}
+
+	bare := &worktrees{list: []worktree{{path: "/repo.git", bare: true}, list[1]}, current: "/wt/feature"}
+	if got := bare.linkedMain(); got != "" {
+		t.Errorf("bare main: linkedMain() = %q, want empty", got)
 	}
 }
 
