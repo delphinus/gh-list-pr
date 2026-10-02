@@ -27,7 +27,7 @@ func switchBack() error {
 	return nil
 }
 
-func runFzf(lines string, opt options) error {
+func runFzf(lines string, prs []PullRequest, opt options) error {
 	args := []string{"--ansi"}
 
 	// Merge user fzf options, avoiding duplicate --ansi
@@ -51,10 +51,10 @@ func runFzf(lines string, opt options) error {
 	}
 
 	selected := strings.TrimSpace(string(out))
-	return handleSelection(selected, opt)
+	return handleSelection(selected, prs, opt)
 }
 
-func handleSelection(selected string, opt options) error {
+func handleSelection(selected string, prs []PullRequest, opt options) error {
 	m := selectionRe.FindStringSubmatch(selected)
 	if m == nil {
 		return fmt.Errorf("failed to parse selection: %s", selected)
@@ -62,6 +62,34 @@ func handleSelection(selected string, opt options) error {
 
 	num, _ := strconv.Atoi(m[1])
 	ref := m[2]
+	// The branch column may be truncated, so take the PR's branch from the data.
+	if num != 0 {
+		for _, pr := range prs {
+			if pr.Number == num {
+				ref = pr.HeadRefName
+				break
+			}
+		}
+	}
+
+	if !opt.web {
+		path, err := findWorktree(ref)
+		if err != nil {
+			return err
+		}
+		if path != "" {
+			update := [][]string{
+				{"gh", "co", "--recurse-submodules", m[1]},
+			}
+			if num == 0 {
+				update = [][]string{
+					{"git", "pull", "origin", ref},
+					{"git", "submodule", "update", "--init", "--recursive"},
+				}
+			}
+			return switchToWorktree(path, ref, update)
+		}
+	}
 
 	if num == 0 {
 		for _, args := range [][]string{
