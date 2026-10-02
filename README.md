@@ -53,6 +53,16 @@ gh list-pr --init zsh
 
 If the selected branch is already checked out in another [worktree](https://git-scm.com/docs/git-worktree), `gh list-pr` moves your shell there and updates the branch in that worktree, instead of failing with `already used by worktree`.
 
+Branches are switched only in the main worktree, so each linked worktree keeps the branch it was made for. Inside a linked worktree:
+
+| Selected branch | What happens |
+|---|---|
+| The branch of this worktree | Updated in place |
+| Checked out in another worktree (including the main one) | Moves there and updates it |
+| Not checked out anywhere | Moves to the main worktree and switches branches there |
+
+`-b` is refused inside a linked worktree for the same reason. If the main repository is bare, branches are switched in place as before.
+
 A program cannot change its parent shell's directory, so this needs the shell integration:
 
 ```bash

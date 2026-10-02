@@ -12,19 +12,17 @@ import (
 var selectionRe = regexp.MustCompile(`^#(\d+).*\s+(\S+)\s+\+\s*\d+/-\s*\d+`)
 
 func switchBack() error {
-	for _, args := range [][]string{
+	wts, err := loadWorktrees()
+	if err != nil {
+		return err
+	}
+	if main := wts.linkedMain(); main != "" {
+		return fmt.Errorf("--back switches branches, which is done only in the main worktree: %s", main)
+	}
+	return runCommands([][]string{
 		{"git", "checkout", "@{-1}"},
 		{"git", "submodule", "update", "--init", "--recursive"},
-	} {
-		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("%s: %w", strings.Join(args, " "), err)
-		}
-	}
-	return nil
+	})
 }
 
 func runFzf(lines string, prs []PullRequest, opt options) error {
@@ -72,43 +70,46 @@ func handleSelection(selected string, prs []PullRequest, opt options) error {
 		}
 	}
 
-	if !opt.web {
-		path, err := findWorktree(ref)
-		if err != nil {
-			return err
-		}
-		if path != "" {
-			update := [][]string{
-				{"gh", "co", "--recurse-submodules", m[1]},
-			}
-			if num == 0 {
-				update = [][]string{
-					{"git", "pull", "origin", ref},
-					{"git", "submodule", "update", "--init", "--recursive"},
-				}
-			}
-			return switchToWorktree(path, ref, update)
-		}
-	}
-
-	if num == 0 {
-		for _, args := range [][]string{
-			{"git", "checkout", ref},
-			{"git", "pull", "origin", ref},
-			{"git", "submodule", "update", "--init", "--recursive"},
-		} {
-			cmd := exec.Command(args[0], args[1:]...)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("%s: %w", args[0], err)
-			}
-		}
-		return nil
-	}
 	if opt.web {
 		return execCommand("gh", "pr", "view", "-w", m[1])
 	}
-	return execCommand("gh", "co", "--recurse-submodules", m[1])
+
+	cmds := [][]string{{"gh", "co", "--recurse-submodules", m[1]}}
+	if num == 0 {
+		cmds = [][]string{
+			{"git", "checkout", ref},
+			{"git", "pull", "origin", ref},
+			{"git", "submodule", "update", "--init", "--recursive"},
+		}
+	}
+
+	wts, err := loadWorktrees()
+	if err != nil {
+		return err
+	}
+	if path := wts.pathOf(ref); path != "" {
+		if !samePath(path, wts.current) {
+			return switchToWorktree(path, ref+" is checked out in another worktree", cmds)
+		}
+	} else if main := wts.linkedMain(); main != "" {
+		return switchToWorktree(main, "switching branches in the main worktree, not in this linked worktree", cmds)
+	}
+
+	if num == 0 {
+		return runCommands(cmds)
+	}
+	return execCommand(cmds[0][0], cmds[0][1:]...)
+}
+
+func runCommands(cmds [][]string) error {
+	for _, args := range cmds {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("%s: %w", strings.Join(args, " "), err)
+		}
+	}
+	return nil
 }
