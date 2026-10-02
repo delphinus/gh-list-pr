@@ -15,6 +15,8 @@ type options struct {
 	searchOptions string
 	web           bool
 	fzfOptions    string
+	init          string
+	cmd           string
 	version       bool
 }
 
@@ -25,6 +27,8 @@ func main() {
 	pflag.StringVarP(&opt.searchOptions, "search-options", "s", "", "Filter PRs (passed to gh pr list; defaults to 30 items, open only)")
 	pflag.BoolVarP(&opt.web, "web", "w", false, "Open selected PR in web browser")
 	pflag.StringVarP(&opt.fzfOptions, "fzf-options", "f", "", "Additional fzf options")
+	pflag.StringVar(&opt.init, "init", "", "Print shell integration for zsh, bash or fish")
+	pflag.StringVar(&opt.cmd, "cmd", "gh", "Function name defined by --init (default wraps gh itself)")
 	pflag.BoolVarP(&opt.version, "version", "v", false, "Print version")
 
 	pflag.Usage = func() {
@@ -33,6 +37,13 @@ func main() {
 Shows a color-coded PR list with author, title, branch, additions/deletions,
 changed files, and date. Default branches (main/master/develop/staging) are
 included when no search filter is applied.
+
+If the selected branch is checked out in another worktree, the shell moves
+there instead of switching branches. This needs the shell integration:
+
+  eval "$(gh list-pr --init zsh)"     # ~/.zshrc
+  eval "$(gh list-pr --init bash)"    # ~/.bashrc
+  gh list-pr --init fish | source     # ~/.config/fish/config.fish
 
 USAGE
   gh list-pr [flags]
@@ -71,6 +82,16 @@ FLAGS`)
 			version = info.Main.Version
 		}
 		fmt.Println("gh-list-pr " + version)
+		return
+	}
+
+	if opt.init != "" {
+		script, err := shellInit(opt.init, opt.cmd)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(2)
+		}
+		fmt.Print(script)
 		return
 	}
 
@@ -143,7 +164,7 @@ FLAGS`)
 		return
 	}
 
-	if err := runFzf(lines, opt); err != nil {
+	if err := runFzf(lines, prs, opt); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}

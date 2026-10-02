@@ -33,6 +33,9 @@ gh list-pr -s '--state all'
 
 # Custom fzf options
 gh list-pr -f '--height=50%'
+
+# Print shell integration (moves to the worktree if the branch is checked out there)
+gh list-pr --init zsh
 ```
 
 ## Options
@@ -43,6 +46,31 @@ gh list-pr -f '--height=50%'
 | `-s`, `--search-options` | Filter PRs (passed to `gh pr list`). Note: `gh pr list` defaults to **30 items** and **open state only**. Use `--limit` and `--state` to override. |
 | `-w`, `--web` | Open selected PR in web browser |
 | `-f`, `--fzf-options` | Additional fzf options |
+| `--init` | Print shell integration for `zsh`, `bash` or `fish` (see [Worktrees](#worktrees)) |
+| `--cmd` | Function name defined by `--init` (default: `gh`, which wraps `gh` itself) |
+
+## Worktrees
+
+If the selected branch is already checked out in another [worktree](https://git-scm.com/docs/git-worktree), `gh list-pr` moves your shell there and updates the branch in that worktree, instead of failing with `already used by worktree`.
+
+A program cannot change its parent shell's directory, so this needs the shell integration:
+
+```bash
+# ~/.zshrc
+eval "$(gh list-pr --init zsh)"
+
+# ~/.bashrc
+eval "$(gh list-pr --init bash)"
+
+# ~/.config/fish/config.fish
+gh list-pr --init fish | source
+```
+
+This defines a `gh` function that handles only `gh list-pr` and passes every other subcommand through to the real `gh`, so you keep typing `gh list-pr` and `gh` completion keeps working. The worktree path is handed over through a temporary file named by `GH_LIST_PR_CWD_FILE`, never through stdout.
+
+- If `gh` is already a function or alias in your shell, the integration does nothing and prints a warning. Use `--cmd` to define a separate function instead, e.g. `eval "$(gh list-pr --init zsh --cmd glp)"` and run `glp`.
+- zsh and bash use `builtin cd`, so a `cd` replaced by an alias (e.g. `zoxide init --cmd cd`) does not interfere. fish uses fish's own `cd` so that `cd -`, `prevd` and `cdh` still remember where you came from.
+- Without the integration, `gh list-pr` leaves the branch untouched, prints the worktree path and how to set the integration up, and exits with status 1.
 
 ## Features
 
