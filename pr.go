@@ -25,6 +25,8 @@ type PullRequest struct {
 	Deletions    int    `json:"deletions"`
 	ChangedFiles int    `json:"changedFiles"`
 	AuthorName   string `json:"-"`
+	DateText     string `json:"-"`
+	DateColor    string `json:"-"`
 }
 
 func fetchPRs(searchOptions string) ([]PullRequest, error) {

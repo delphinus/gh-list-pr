@@ -39,6 +39,7 @@ func calculateLayout(prs []PullRequest, opt options) ColumnLayout {
 	maxAdd := 1
 	maxDel := 1
 	maxFile := 1
+	maxDate := 0
 	for _, pr := range prs {
 		if w := len(fmt.Sprintf("%d", pr.Number)); w > maxNum {
 			maxNum = w
@@ -51,6 +52,9 @@ func calculateLayout(prs []PullRequest, opt options) ColumnLayout {
 		}
 		if w := len(fmt.Sprintf("%d", pr.ChangedFiles)); w > maxFile {
 			maxFile = w
+		}
+		if w := displayWidth(pr.DateText); w > maxDate {
+			maxDate = w
 		}
 	}
 
@@ -77,7 +81,7 @@ func calculateLayout(prs []PullRequest, opt options) ColumnLayout {
 
 	droppableFixedCols := []droppableFixed{
 		{name: "files", width: maxFile + 10}, // "  N files  "
-		{name: "date", width: 22},            // "  " + 20 chars
+		{name: "date", width: maxDate + 2},   // "  " + date
 	}
 
 	variableCols := []variableCol{

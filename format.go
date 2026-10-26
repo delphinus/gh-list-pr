@@ -49,7 +49,7 @@ func buildLine(pr PullRequest, layout ColumnLayout) string {
 
 	// Date
 	if layout.ShowDate {
-		fmt.Fprintf(&b, "  %s%s%s", brightBlack, pr.CreatedAt, reset)
+		fmt.Fprintf(&b, "  %s%s%s", pr.DateColor, pr.DateText, reset)
 	}
 
 	return b.String()

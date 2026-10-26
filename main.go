@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime/debug"
+	"time"
 
 	"github.com/spf13/pflag"
 )
@@ -155,6 +156,7 @@ FLAGS`)
 			prs[i].AuthorName = "unknown"
 		}
 	}
+	annotateDates(prs, time.Now())
 
 	layout := calculateLayout(prs, opt)
 	lines := formatLines(prs, layout)

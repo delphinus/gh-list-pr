@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 var update = flag.Bool("update", false, "update golden files")
@@ -59,6 +60,10 @@ var snapshotPRs = []PullRequest{
 
 func TestSnapshot(t *testing.T) {
 	t.Setenv("FZF_DEFAULT_OPTS", "")
+	t.Setenv("LC_ALL", "")
+	t.Setenv("LC_TIME", "")
+	t.Setenv("LANG", "ja_JP.UTF-8")
+	annotateDates(snapshotPRs, time.Date(2025, 1, 18, 18, 0, 0, 0, time.UTC))
 
 	tests := []struct {
 		name   string
