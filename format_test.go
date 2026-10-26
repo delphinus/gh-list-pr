@@ -26,6 +26,8 @@ func TestBuildLine(t *testing.T) {
 		HeadRefName:  "feature-branch",
 		AuthorName:   "alice",
 		CreatedAt:    "2025-01-15T10:00:00Z",
+		DateText:     "2025年1月15日 10:00",
+		DateColor:    dateThisMonth,
 		IsDraft:      false,
 		Additions:    10,
 		Deletions:    5,
@@ -71,7 +73,7 @@ func TestBuildLine(t *testing.T) {
 		if !strings.Contains(got, "files") {
 			t.Error("buildLine() with ShowFiles=true should contain 'files'")
 		}
-		if !strings.Contains(got, "2025-01-15T10:00:00Z") {
+		if !strings.Contains(got, "2025年1月15日 10:00") {
 			t.Error("buildLine() with ShowDate=true should contain the date")
 		}
 	})

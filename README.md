@@ -85,6 +85,7 @@ This defines a `gh` function that handles only `gh list-pr` and passes every oth
 ## Features
 
 - Color-coded PR list with author, title, branch, additions/deletions, changed files, and date
+- Dates shown like Finder ("Today at 2:23 PM", "Oct 3, 2026 at 2:00 PM"; Japanese under a `ja` locale), brighter for recent PRs
 - GitHub emoji support in PR titles (`:emoji_name:` → Unicode)
 - Smart column layout with priority-based truncation for narrow terminals
 - Default branch display (main/master/develop/staging)
