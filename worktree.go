@@ -12,9 +12,10 @@ import (
 const cwdFileEnv = "GH_LIST_PR_CWD_FILE"
 
 type worktree struct {
-	path   string
-	branch string // local branch name; "" when detached or bare
-	bare   bool
+	path     string
+	branch   string // local branch name; "" when detached or bare
+	bare     bool
+	prunable bool // the directory is gone
 }
 
 // parseWorktrees parses `git worktree list --porcelain`. The first entry is
@@ -30,6 +31,8 @@ func parseWorktrees(out string) []worktree {
 			result[len(result)-1].branch = strings.TrimPrefix(line, "branch refs/heads/")
 		case line == "bare":
 			result[len(result)-1].bare = true
+		case line == "prunable" || strings.HasPrefix(line, "prunable "):
+			result[len(result)-1].prunable = true
 		}
 	}
 	return result
@@ -124,3 +127,59 @@ const initHint = `To move there automatically, add the shell integration:
   # ~/.config/fish/config.fish
   gh list-pr --init fish | source
 `
+
+// worktreeRows returns rows for the worktrees that no row in prs covers yet:
+// those on a branch without a PR, and detached ones. The current worktree,
+// a bare main repository and worktrees whose directory is gone are skipped.
+func worktreeRows(prs []PullRequest, w *worktrees) []PullRequest {
+	listed := map[string]bool{}
+	for _, pr := range prs {
+		listed[pr.HeadRefName] = true
+	}
+	home, _ := os.UserHomeDir()
+
+	var rows []PullRequest
+	for _, wt := range w.list {
+		if wt.bare || wt.prunable || samePath(wt.path, w.current) {
+			continue
+		}
+		if wt.branch != "" && listed[wt.branch] {
+			continue
+		}
+		branch := wt.branch
+		if branch == "" {
+			branch = "(detached)"
+		}
+		rows = append(rows, PullRequest{
+			Title:        abbrevHome(wt.path, home),
+			HeadRefName:  branch,
+			Author:       Author{Login: "worktree"},
+			CreatedAt:    headCommitTime(wt.path),
+			WorktreePath: wt.path,
+		})
+	}
+	return rows
+}
+
+func abbrevHome(path, home string) string {
+	if home == "" {
+		return path
+	}
+	if path == home {
+		return "~"
+	}
+	if rel, ok := strings.CutPrefix(path, home+string(filepath.Separator)); ok {
+		return "~" + string(filepath.Separator) + rel
+	}
+	return path
+}
+
+// headCommitTime returns the committer date of HEAD in the worktree at path,
+// or "" when it cannot be read.
+func headCommitTime(path string) string {
+	out, err := exec.Command("git", "-C", path, "log", "-1", "--format=%cI").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}

@@ -21,6 +21,11 @@ detached
 
 worktree /wt/bare
 bare
+
+worktree /wt/gone
+HEAD 4444444444444444444444444444444444444444
+branch refs/heads/gone
+prunable gitdir file points to non-existent location
 `
 	got := parseWorktrees(out)
 	want := []worktree{
@@ -28,6 +33,7 @@ bare
 		{path: "/wt/feature", branch: "feature/x"},
 		{path: "/wt/detached"},
 		{path: "/wt/bare", bare: true},
+		{path: "/wt/gone", branch: "gone", prunable: true},
 	}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -105,5 +111,56 @@ func TestShellInitErrors(t *testing.T) {
 	}
 	if _, err := shellInit("zsh", "a;b"); err == nil {
 		t.Error("expected error for invalid command name")
+	}
+}
+
+func TestWorktreeRows(t *testing.T) {
+	w := &worktrees{
+		list: []worktree{
+			{path: "/repo", branch: "topic"},
+			{path: "/wt/pr", branch: "feature/pr"},
+			{path: "/wt/main", branch: "main"},
+			{path: "/wt/nopr", branch: "experiment"},
+			{path: "/wt/detached"},
+			{path: "/wt/gone", branch: "gone", prunable: true},
+			{path: "/wt/current", branch: "current"},
+		},
+		current: "/wt/current",
+	}
+	prs := []PullRequest{
+		{Number: 1, HeadRefName: "feature/pr"},
+		{HeadRefName: "main"},
+	}
+
+	got := worktreeRows(prs, w)
+	want := []struct{ path, branch string }{
+		{"/repo", "topic"},
+		{"/wt/nopr", "experiment"},
+		{"/wt/detached", "(detached)"},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d rows %+v, want %d", len(got), got, len(want))
+	}
+	for i, w := range want {
+		if got[i].WorktreePath != w.path || got[i].HeadRefName != w.branch {
+			t.Errorf("%d: got (%q, %q), want (%q, %q)", i, got[i].WorktreePath, got[i].HeadRefName, w.path, w.branch)
+		}
+		if got[i].Number != 0 {
+			t.Errorf("%d: Number = %d, want 0", i, got[i].Number)
+		}
+	}
+}
+
+func TestAbbrevHome(t *testing.T) {
+	tests := []struct{ path, home, want string }{
+		{"/home/u/wt/foo", "/home/u", "~/wt/foo"},
+		{"/home/u", "/home/u", "~"},
+		{"/home/user2/wt", "/home/u", "/home/user2/wt"},
+		{"/srv/wt", "", "/srv/wt"},
+	}
+	for _, tt := range tests {
+		if got := abbrevHome(tt.path, tt.home); got != tt.want {
+			t.Errorf("abbrevHome(%q, %q) = %q, want %q", tt.path, tt.home, got, tt.want)
+		}
 	}
 }

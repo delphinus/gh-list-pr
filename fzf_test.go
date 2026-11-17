@@ -4,84 +4,28 @@ import (
 	"testing"
 )
 
-func TestSelectionRegex(t *testing.T) {
+func TestSelectedIndex(t *testing.T) {
+	lines := "\033[32m#42  \033[0m\033[35muser  \033[0mFix bug  \033[36mfeature-…  \033[0m+10/-5\n" +
+		"\033[32m#0   \033[0m\033[35msystem  \033[0mmain  \033[36mmain  \033[0m+0/-0\n" +
+		"\033[34mwt   \033[0m\033[35mworktree  \033[0m~/wt/foo  \033[36mfoo  \033[0m+0/-0\n"
+
 	tests := []struct {
-		name       string
-		input      string
-		wantMatch  bool
-		wantNum    string
-		wantBranch string
+		name     string
+		selected string
+		want     int
 	}{
-		{
-			name:       "standard_pr",
-			input:      "#42  user  Fix bug  feature-branch  +10/-5",
-			wantMatch:  true,
-			wantNum:    "42",
-			wantBranch: "feature-branch",
-		},
-		{
-			name:       "default_branch",
-			input:      "#0  system  main  main  +0/-0",
-			wantMatch:  true,
-			wantNum:    "0",
-			wantBranch: "main",
-		},
-		{
-			name:       "large_pr_number",
-			input:      "#12345  user  Some title  my-branch  +100/-200",
-			wantMatch:  true,
-			wantNum:    "12345",
-			wantBranch: "my-branch",
-		},
-		{
-			name:      "empty_string",
-			input:     "",
-			wantMatch: false,
-		},
-		{
-			name:      "invalid_string",
-			input:     "not a pr line",
-			wantMatch: false,
-		},
-		{
-			name:       "no_ansi",
-			input:      "#7  user  Title  branch-name  +1/-0",
-			wantMatch:  true,
-			wantNum:    "7",
-			wantBranch: "branch-name",
-		},
-		{
-			name:       "padded_deletions",
-			input:      "#34473  lewis6991  feat(lua): add vim.async  vimasync  +2545/-   0",
-			wantMatch:  true,
-			wantNum:    "34473",
-			wantBranch: "vimasync",
-		},
-		{
-			name:       "padded_additions",
-			input:      "#100  user  Title  branch  +   5/-300",
-			wantMatch:  true,
-			wantNum:    "100",
-			wantBranch: "branch",
-		},
+		{"pr", "#42  user  Fix bug  feature-…  +10/-5", 0},
+		{"default_branch", "#0   system  main  main  +0/-0", 1},
+		{"worktree", "wt   worktree  ~/wt/foo  foo  +0/-0", 2},
+		{"surrounding_space", "  wt   worktree  ~/wt/foo  foo  +0/-0\n", 2},
+		{"with_colors", "\033[34mwt   \033[0mworktree  ~/wt/foo  foo  +0/-0", 2},
+		{"unknown", "#7  user  Title  branch  +1/-0", -1},
+		{"empty", "", -1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := selectionRe.FindStringSubmatch(tt.input)
-			if tt.wantMatch {
-				if m == nil {
-					t.Fatalf("expected match for %q, got nil", tt.input)
-				}
-				if m[1] != tt.wantNum {
-					t.Errorf("PR number = %q, want %q", m[1], tt.wantNum)
-				}
-				if m[2] != tt.wantBranch {
-					t.Errorf("branch = %q, want %q", m[2], tt.wantBranch)
-				}
-			} else {
-				if m != nil {
-					t.Errorf("expected no match for %q, got %v", tt.input, m)
-				}
+			if got := selectedIndex(lines, tt.selected); got != tt.want {
+				t.Errorf("selectedIndex(%q) = %d, want %d", tt.selected, got, tt.want)
 			}
 		})
 	}

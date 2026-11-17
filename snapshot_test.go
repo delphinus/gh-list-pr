@@ -56,6 +56,13 @@ var snapshotPRs = []PullRequest{
 		Deletions:    567,
 		ChangedFiles: 89,
 	},
+	{
+		Title:        "~/wt/spike",
+		HeadRefName:  "spike",
+		AuthorName:   "worktree",
+		CreatedAt:    "2025-01-18T09:00:00Z",
+		WorktreePath: "/home/u/wt/spike",
+	},
 }
 
 func TestSnapshot(t *testing.T) {
