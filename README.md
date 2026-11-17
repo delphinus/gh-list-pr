@@ -34,7 +34,8 @@ gh list-pr -s '--state all'
 # Custom fzf options
 gh list-pr -f '--height=50%'
 
-# Print shell integration (moves to the worktree if the branch is checked out there)
+# Print shell integration (moves to the worktree if the branch is checked out there,
+# or when a worktree row is chosen)
 gh list-pr --init zsh
 ```
 
@@ -50,6 +51,8 @@ gh list-pr --init zsh
 | `--cmd` | Function name defined by `--init` (default: `gh`, which wraps `gh` itself) |
 
 ## Worktrees
+
+Worktrees whose branch has no PR, and detached ones, are listed too, marked `wt` with their path in place of the title. Choosing one moves your shell there without touching its branch. Like the default branches, they are listed only when `-s` is not given.
 
 If the selected branch is already checked out in another [worktree](https://git-scm.com/docs/git-worktree), `gh list-pr` moves your shell there and updates the branch in that worktree, instead of failing with `already used by worktree`.
 
@@ -89,6 +92,7 @@ This defines a `gh` function that handles only `gh list-pr` and passes every oth
 - GitHub emoji support in PR titles (`:emoji_name:` → Unicode)
 - Smart column layout with priority-based truncation for narrow terminals
 - Default branch display (main/master/develop/staging)
+- Worktrees without a PR are listed, and choosing one moves the shell there
 - East Asian wide character support
 
 ## Why not `gh pr checkout`?

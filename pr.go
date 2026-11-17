@@ -25,6 +25,7 @@ type PullRequest struct {
 	Deletions    int    `json:"deletions"`
 	ChangedFiles int    `json:"changedFiles"`
 	AuthorName   string `json:"-"`
+	WorktreePath string `json:"-"` // set on rows for worktrees without a PR
 	DateText     string `json:"-"`
 	DateColor    string `json:"-"`
 }

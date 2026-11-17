@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var selectionRe = regexp.MustCompile(`^#(\d+).*\s+(\S+)\s+\+\s*\d+/-\s*\d+`)
+var ansiRe = regexp.MustCompile("\x1b\\[[0-9;]*m")
 
 func switchBack() error {
 	wts, err := loadWorktrees()
@@ -49,32 +49,43 @@ func runFzf(lines string, prs []PullRequest, opt options) error {
 	}
 
 	selected := strings.TrimSpace(string(out))
-	return handleSelection(selected, prs, opt)
-}
-
-func handleSelection(selected string, prs []PullRequest, opt options) error {
-	m := selectionRe.FindStringSubmatch(selected)
-	if m == nil {
+	i := selectedIndex(lines, selected)
+	if i < 0 || i >= len(prs) {
 		return fmt.Errorf("failed to parse selection: %s", selected)
 	}
+	return handleSelection(prs[i], opt)
+}
 
-	num, _ := strconv.Atoi(m[1])
-	ref := m[2]
-	// The branch column may be truncated, so take the PR's branch from the data.
-	if num != 0 {
-		for _, pr := range prs {
-			if pr.Number == num {
-				ref = pr.HeadRefName
-				break
-			}
+// selectedIndex returns the index of the line fzf printed for the selection,
+// or -1. fzf prints the line with the colors removed. Columns may be
+// truncated, so the row is identified by its whole line rather than parsed.
+func selectedIndex(lines, selected string) int {
+	selected = strings.TrimSpace(ansiRe.ReplaceAllString(selected, ""))
+	for i, line := range strings.Split(strings.TrimSuffix(lines, "\n"), "\n") {
+		if strings.TrimSpace(ansiRe.ReplaceAllString(line, "")) == selected {
+			return i
 		}
 	}
+	return -1
+}
 
-	if opt.web {
-		return execCommand("gh", "pr", "view", "-w", m[1])
+func handleSelection(pr PullRequest, opt options) error {
+	if pr.WorktreePath != "" {
+		if opt.web {
+			return fmt.Errorf("no pull request for the worktree: %s", pr.WorktreePath)
+		}
+		return switchToWorktree(pr.WorktreePath, "selected a worktree", nil)
 	}
 
-	cmds := [][]string{{"gh", "co", "--recurse-submodules", m[1]}}
+	num := pr.Number
+	ref := pr.HeadRefName
+	numStr := strconv.Itoa(num)
+
+	if opt.web {
+		return execCommand("gh", "pr", "view", "-w", numStr)
+	}
+
+	cmds := [][]string{{"gh", "co", "--recurse-submodules", numStr}}
 	if num == 0 {
 		cmds = [][]string{
 			{"git", "checkout", ref},

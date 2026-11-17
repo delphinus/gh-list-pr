@@ -36,8 +36,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, `List pull requests and interactively select one to checkout using fzf.
 
 Shows a color-coded PR list with author, title, branch, additions/deletions,
-changed files, and date. Default branches (main/master/develop/staging) are
-included when no search filter is applied.
+changed files, and date. Default branches (main/master/develop/staging) and
+worktrees whose branch has no PR (marked "wt") are included when no search
+filter is applied. Choosing a worktree moves the shell there.
 
 If the selected branch is checked out in another worktree, the shell moves
 there instead of switching branches. This needs the shell integration:
@@ -136,6 +137,11 @@ FLAGS`)
 			fmt.Fprintf(os.Stderr, "Warning: failed to get default branches: %v\n", err)
 		} else {
 			prs = append(prs, branches...)
+		}
+		if wts, err := loadWorktrees(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to get worktrees: %v\n", err)
+		} else {
+			prs = append(prs, worktreeRows(prs, wts)...)
 		}
 	}
 
